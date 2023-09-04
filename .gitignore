@@ -1,0 +1,14 @@
+__pycache__/config.cpython-39.pyc
+__pycache__/dataProcess.cpython-39.pyc
+__pycache__/model.cpython-39.pyc
+base_model_file/config.json
+base_model_file/flax_model.msgpack
+base_model_file/gitattributes.txt
+base_model_file/model.safetensors
+base_model_file/pytorch_model.bin
+base_model_file/README.md
+base_model_file/tf_model.h5
+base_model_file/tokenizer_config.json
+base_model_file/tokenizer.json
+base_model_file/vocab.txt
+data/data_final/final.json
