@@ -5,6 +5,7 @@ class config:
     lr = 1e-3
     model_path = 'E:/learning_material/top_xhs/bertClassForLawMultiTask/base_model_file'
     data_path = 'E:/learning_material/top_xhs/bertClassForLawMultiTask/data/data_final'
+    log_path = 'E:/learning_material/top_xhs/bertClassForLawMultiTask/log'
     epochs = 3
     max_len = 512
     input_size = 768
@@ -14,3 +15,6 @@ class config:
     
     #Todo : deepspeed applied
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    
+    

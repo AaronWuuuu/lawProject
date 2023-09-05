@@ -15,11 +15,15 @@ from model import lawModel
 
 from torch.cuda.amp import GradScaler, autocast
 
+from torch.utils.tensorboard import SummaryWriter
 
 def train():
     #Todo:add argument configuration
     # config    
     train_config = config()
+    
+    # init tensorboard
+    writer = SummaryWriter(config.log_path)
     
     # init Tokenizer
     Tokenizer = AutoTokenizer.from_pretrained(train_config.model_path)
@@ -56,21 +60,26 @@ def train():
                     accusation_out, relevant_articles_out, imprisonment_out = model(input_ids, token_type_ids, attention_mask)
                     loss_accusation = creterion_cro_entro(accusation_out, accusation_label.long())
                     loss_relevant_articles = creterion_cro_entro(relevant_articles_out, relevant_articles_label.long())
-                    loss_imprisonment_label = creterion_reg(imprisonment_out, imprisonment_label)
+                    # loss_imprisonment_label = creterion_reg(imprisonment_out, imprisonment_label)
                     
                     #Todo : cascade structure needed, the weights of loss need to be determined.
-                    loss_total = loss_accusation + loss_relevant_articles + loss_imprisonment_label/100
+                    loss_total = loss_accusation + loss_relevant_articles
                 
                 GradScale.scale(loss_total).backward()
                 GradScale.step(optimizer) 
                 GradScale.update()
+                
+                writer.add_scalar('accusation loss', loss_accusation, global_step=step)
+                writer.add_scalar('relevant_articles loss', loss_relevant_articles, global_step=step)
+                # writer.add_scalar('imprisonment loss', loss_imprisonment_label, global_step=step)
+                # writer.add_scalar('total loss', loss_total.detach().cpu().numpy(), global_step=step)
                 
                 step += 1
                 p_bar.set_description(f"step : {step}")
                 p_bar.set_postfix(
                     loss_accusation=loss_accusation.detach().cpu().numpy(),
                     loss_relevant_articles=loss_relevant_articles.detach().cpu().numpy(), 
-                    loss_imprisonment_label=loss_imprisonment_label.detach().cpu().numpy(), 
+                    # loss_imprisonment_label=loss_imprisonment_label.detach().cpu().numpy(), 
                     )
                 p_bar.update()
 
