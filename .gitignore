@@ -13,3 +13,5 @@ base_model_file/tokenizer.json
 base_model_file/vocab.txt
 data/data_final/final.json
 log/events.out.tfevents.1693928043.DESKTOP-SGB0E5F.33084.0
+test._tempipynb
+test._temp.ipynb

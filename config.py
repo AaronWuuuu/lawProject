@@ -13,6 +13,9 @@ class config:
     accusation_num = 116
     relevant_articles_num = 100
     
+    test_size = 0.1
+    seed = 1024
+    
     #Todo : deepspeed applied
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     

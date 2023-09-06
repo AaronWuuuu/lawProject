@@ -9,19 +9,15 @@ from transformers import AutoModel, AutoTokenizer, AutoConfig
 class dataPreProcess(object):
     def __init__(self, train_config):
         self.train_config = train_config
-        self.rawdata = load_dataset(
-            "json",
-            data_dir= train_config.data_path
-        )
         self.accusation_label_encoder = preprocessing.LabelEncoder()
         self.relevant_articles_label_encoder = preprocessing.LabelEncoder()
         
-    def getOriData(self):
+    def getOriData(self, rawdata):
         relevant_articles = []
         accusation = []
         imprisonment = []
-        fact = self.rawdata['train']['fact']
-        meta = self.rawdata['train']['meta']
+        fact = rawdata['fact']
+        meta = rawdata['meta']
         
 
         for i in tqdm(range(len(meta))):
@@ -73,16 +69,23 @@ class dataSetTorch(Dataset):
         
         
 if __name__  == '__main__':
+
     from config import config
     train_config = config()
+    rawdata = load_dataset(
+        "json",
+        data_dir= train_config.data_path
+    )
+    rawdata = rawdata['train'].train_test_split(test_size=config.test_size, seed=config.seed)
     
     Tokenizer = AutoTokenizer.from_pretrained(train_config.model_path)
     
     data_loader = dataPreProcess(train_config)
-    data = data_loader.getOriData()
-    print(data['relevant_articles'][2])
+    data_train = data_loader.getOriData(rawdata['train'])
+    data_test = data_loader.getOriData(rawdata['test'])
+    print(data_train['relevant_articles'][2])
     
-    dataSet = dataSetTorch(Tokenizer, data, train_config)
+    dataSet = dataSetTorch(Tokenizer, data_train, train_config)
     
     dataloader_se = DataLoader(dataSet, batch_size=train_config.batch_size, shuffle=True)
     
