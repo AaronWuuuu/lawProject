@@ -1,5 +1,6 @@
 {
     "train_batch_size": 4,
+    "deepspeed": "./train_args/ds_z3_config.json",
     "steps_per_print": 2000,
     "optimizer": {
       "type": "Adam",
