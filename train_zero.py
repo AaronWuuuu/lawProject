@@ -15,16 +15,17 @@ from torch.optim import Adam
 from dataProcess import dataPreProcess, dataSetTorch
 from model import lawModel
 
-from torch.cuda.amp import GradScaler, autocast
 
 from torch.utils.tensorboard import SummaryWriter
 
 import deepspeed
+from arguments import add_argument
 
 def train():
     #Todo:add argument configuration
     # config    
     train_config = config()
+    arg = add_argument()
     
     # init tensorboard
     writer = SummaryWriter(config.log_path)
@@ -46,17 +47,24 @@ def train():
     dataTrainSet = dataSetTorch(Tokenizer, data_train, train_config)
     dataTestSet = dataSetTorch(Tokenizer, data_test, train_config)
     
-    trainLoader = DataLoader(dataTrainSet, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True)
-    testLoader = DataLoader(dataTestSet, batch_size=1, shuffle=False)
+    # trainLoader = DataLoader(dataTrainSet, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    # testLoader = DataLoader(dataTestSet, batch_size=1, shuffle=False)
+    
+    
     # init model
-    model_engine, optimizer, _, _ = deepspeed.initialize(args=)
-    # model = lawModel(train_config).to(device=config.device)
+    model = lawModel(train_config)
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    model, optimizer, trainLoader, _ = deepspeed.initialize(
+        args=arg,
+        model=model,
+        model_parameters=parameters,
+        training_data=dataTrainSet
+    )
     
     # init optim、creterion_cro_entro、creterion_reg
     optimizer = Adam(model.parameters(), lr=config.batch_size)
     creterion_cro_entro = nn.CrossEntropyLoss()
     
-    GradScale = GradScaler()
     
     step = 0
     for epoch in range(config.epochs):
@@ -70,17 +78,16 @@ def train():
                 relevant_articles_label = relevant_articles_label.to(device=config.device)
                 imprisonment_label = imprisonment_label.to(device=config.device)
                 
-                with autocast():
-                    accusation_out, relevant_articles_out, imprisonment_out = model(input_ids, token_type_ids, attention_mask)
-                    loss_accusation = creterion_cro_entro(accusation_out, accusation_label.long())
-                    loss_relevant_articles = creterion_cro_entro(relevant_articles_out, relevant_articles_label.long())
-                    
-                    #Todo : cascade structure needed, the weights of loss need to be determined.
-                    loss_total = loss_accusation + loss_relevant_articles
+                accusation_out, relevant_articles_out, imprisonment_out = model(input_ids, token_type_ids, attention_mask)
+                loss_accusation = creterion_cro_entro(accusation_out, accusation_label.long())
+                loss_relevant_articles = creterion_cro_entro(relevant_articles_out, relevant_articles_label.long())
                 
-                GradScale.scale(loss_total).backward()
-                GradScale.step(optimizer) 
-                GradScale.update()
+                #Todo : cascade structure needed, the weights of loss need to be determined.
+                loss_total = loss_accusation + loss_relevant_articles
+            
+
+                model.backward(loss_total)
+                model.step()
                 
                 writer.add_scalar('accusation loss', loss_accusation, global_step=step)
                 writer.add_scalar('relevant_articles loss', loss_relevant_articles, global_step=step)
