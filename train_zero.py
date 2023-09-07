@@ -19,6 +19,8 @@ from torch.cuda.amp import GradScaler, autocast
 
 from torch.utils.tensorboard import SummaryWriter
 
+import deepspeed
+
 def train():
     #Todo:add argument configuration
     # config    
@@ -47,7 +49,8 @@ def train():
     trainLoader = DataLoader(dataTrainSet, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True)
     testLoader = DataLoader(dataTestSet, batch_size=1, shuffle=False)
     # init model
-    model = lawModel(train_config).to(device=config.device)
+    model_engine, optimizer, _, _ = deepspeed.initialize(args=)
+    # model = lawModel(train_config).to(device=config.device)
     
     # init optim、creterion_cro_entro、creterion_reg
     optimizer = Adam(model.parameters(), lr=config.batch_size)
@@ -92,23 +95,6 @@ def train():
                     # loss_imprisonment_label=loss_imprisonment_label.detach().cpu().numpy(), 
                     )
                 p_bar.update()
-        
-        if epoch % 5 == 0:
-            model.eval()
-            for batch_idx, (input_ids, token_type_ids, attention_mask, accusation_label, relevant_articles_label, imprisonment_label) in enumerate(testLoader):
-                input_ids = input_ids.to(device=config.device)
-                token_type_ids = token_type_ids.to(device=config.device)
-                attention_mask = attention_mask.to(device=config.device)
-                accusation_label = accusation_label.to(device=config.device)
-                relevant_articles_label = relevant_articles_label.to(device=config.device)
-                imprisonment_label = imprisonment_label.to(device=config.device)
-                with torch.no_grad():
-                    accusation_out, relevant_articles_out, imprisonment_out = model(input_ids, token_type_ids, attention_mask)
-                    loss_accusation = creterion_cro_entro(accusation_out, accusation_label.long())
-                    loss_relevant_articles = creterion_cro_entro(relevant_articles_out, relevant_articles_label.long())
-                
-                loss_total = loss_accusation + loss_relevant_articles
-                writer.add_scalar('accusation loss', loss_total, global_step=step)
                 
 
 if __name__ == '__main__':
