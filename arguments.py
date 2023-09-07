@@ -1,8 +1,7 @@
- import argparse
- import deepspeed
+import argparse
+import deepspeed
 
- def add_argument():
-
+def add_argument():
     parser=argparse.ArgumentParser(description='CIFAR')
 
     #data
